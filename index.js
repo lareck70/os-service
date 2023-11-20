@@ -153,6 +153,7 @@ var linuxSystemUnit = [
 	'StandardError=null',
 	'UMask=0007',
 	'ExecStart=##NODE_PATH## ##NODE_ARGS## ##PROGRAM_PATH## ##PROGRAM_ARGS##',
+	'Environment=##ENVIRONMENT##',
 	'',
 	'[Install]',
 	'WantedBy=##SYSTEMD_WANTED_BY##'
@@ -202,6 +203,8 @@ function add (name, options, cb) {
 
 	var username = options ? (options.username || null) : null;
 	var password = options ? (options.password || null) : null;
+
+	var programEnv = options ? (options.environment || null) : null;
 
 	if (os.platform() == "win32") {
 		var displayName = (options && options.displayName)
@@ -331,10 +334,14 @@ function add (name, options, cb) {
 					line = line.replace("##PROGRAM_ARGS##", programArgsStr);
 					line = line.replace("##SYSTEMD_WANTED_BY##", systemdWantedBy);
 					line = line.replace("##DEPENDENCIES##", deps);
-					
+					if (line.search(/##ENVIRONMENT##/) != -1 && !programEnv)
+						line = "";
+					else
+						line = line.replace("##ENVIRONMENT##", programEnv);
+
 					systemUnit.push(line);
 				}
-				
+
 				var systemUnitStr = systemUnit.join("\n");
 
 				fs.writeFile(systemPath, systemUnitStr, ctlOptions, function(error) {
